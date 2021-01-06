@@ -1,0 +1,53 @@
+version: '3.9'
+
+# Services
+services:
+
+  # Nginx Service
+  nginx: 
+    image: nginx:1.19.6-alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./src/backend:/var/www/backend:ro,delegated
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - phpmyadmindata:/var/www/phpmyadmin:ro,delegated
+    depends_on:
+      - backend
+      - phpmyadmin
+
+  # Backend Service
+  backend:
+    build: ./src/backend
+    working_dir: /var/www/php
+    volumes:
+      - ./src/backend:/var/www/backend:delegated
+    depends_on:
+      - mysql
+
+  # MySQL Service
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo
+    volumes:
+      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - mysqldata:/var/lib/mysql:delegated
+
+  # PhpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin:5.0.4-fpm-alpine
+    environment:
+      PMA_HOST: mysql
+    volumes:
+      - phpmyadmindata:/var/www/html:delegated
+    depends_on:
+      - mysql
+
+# Volumes
+volumes:
+
+  mysqldata:
+
+  phpmyadmindata:
